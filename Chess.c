@@ -23,7 +23,7 @@ void Draw();     //draw the board
 
 int Game();      //the game
 
-int isWin();     //judge whether the player win
+void isWin();     //judge whether the player win
 
 void welcome();  //choose mode
 
@@ -39,7 +39,6 @@ int main()
 			}
 		}
 		welcome();
-		//system("cls");
 		printf("是否退出游戏?\n");
 	} while (getch() != 0x1b);
 	system("pause");
@@ -185,32 +184,75 @@ int count(int Chess[Width][Width], int cx, int cy, int Player, int direction)//d
 	return Amount;
 }
 
-int isWin(int Chess[Width][Width], int cx, int cy, int Player)
+void isWin(int Chess[Width][Width], int cx, int cy, int* player)
 {
 	int Result = 0;
 	int k;
+	int Player = *player;
 	for (k = 0; k < 4; k++) {
 		if (count(Chess, cx, cy, Player, k) >= WinAmount) {
 			Result = 1;
 		}
 	}
-	return Result;
+	if (Result) {
+		Draw();
+		switch (Player)
+		{
+		case 1: {
+			printf("BLACK Win!\n");
+			break;
+		}
+		case -1: {
+			printf("WHITE Win!\n"); 
+			break;
+		}
+		default:
+			break;
+		}
+		Player = 0;
+	};
+	*player = -1 * Player;
 }
 
-int Repentance(int* player)//悔棋
+void Repentance(int* player, int* re, int mod)//悔棋,mod=1是储存模式，mod=2是复位模式
 {
-	int player_now = *player;
-	for (int i = 0; i < BOARDWIDTH; i++) {
-		for (int j = 0; j < BOARDWIDTH; j++) {
-			BOARD[i][j] = REBOARD[i][j];
+	switch (mod)
+	{
+	case 1: {
+		for (int i = 0; i < BOARDWIDTH; i++) {
+			for (int j = 0; j < BOARDWIDTH; j++) {
+				REBOARD[i][j] = BOARD[i][j];
+			}
 		}
-	}
-	for (int i = 0; i < Width; i++) {
-		for (int j = 0; j < Width; j++) {
-			chess[i][j] = rechess[i][j];
+		for (int i = 0; i < Width; i++) {
+			for (int j = 0; j < Width; j++) {
+				rechess[i][j] = chess[i][j];
+			}
 		}
+		*re = 1;//更新悔棋状态
+		break;
 	}
-	*player = (-1) * player_now;
+	case 2: {
+		//将棋盘状态恢复到上一次落子
+		int player_now = *player;
+		for (int i = 0; i < BOARDWIDTH; i++) {
+			for (int j = 0; j < BOARDWIDTH; j++) {
+				BOARD[i][j] = REBOARD[i][j];
+			}
+		}
+		for (int i = 0; i < Width; i++) {
+			for (int j = 0; j < Width; j++) {
+				chess[i][j] = rechess[i][j];
+			}
+		}
+		//切换下棋的人
+		*re = 0;//更新悔棋状态
+		*player = (-1) * player_now;
+		break;
+	}
+	default:
+		break;
+	}
 }
 
 int Game() {
@@ -219,19 +261,13 @@ int Game() {
 	int x = 1, y = 1;
 	int player = 1;   //1 is black,-1 is white
 	int result = 0;
-	int re = 0;
+	int re = 0;//判断是否可以悔棋，若在上次悔棋后没有落子则不能悔棋，re=0
 	char* color = BLACK;
 	BOARD[x][y] = INIT;
-	for (int i = 0; i < BOARDWIDTH; i++) {
-		for (int j = 0; j < BOARDWIDTH; j++) {
-			REBOARD[i][j] = BOARD[i][j];
-		}
-	}
-	for (int i = 0; i < Width; i++) {
-		for (int j = 0; j < Width; j++) {
-			rechess[i][j] = chess[i][j];
-		}
-	}
+
+	//初始先储存一次棋盘状态
+	Repentance(&player, &re, 1);
+
 	Draw();
 	do {
 		color = player == 1 ? BLACK : WHITE;
@@ -264,39 +300,22 @@ int Game() {
 		}
 		case 'r': {
 			if (re) {
-				Repentance(&player);
-				re *= 0;
+				Repentance(&player, &re, 2);
 			}
 			break;
 		}
 		case ' ': {
-			for (int i = 0; i < BOARDWIDTH; i++) {
-				for (int j = 0; j < BOARDWIDTH; j++) {
-					REBOARD[i][j] = BOARD[i][j];
-				}
-			}
-			for (int i = 0; i < Width; i++) {
-				for (int j = 0; j < Width; j++) {
-					rechess[i][j] = chess[i][j];
-				}
-			}
-			re = 1;
+			//落子时先储存当前棋盘状态
+			Repentance(&player, &re, 1);
+
 			if (BOARD[x][y] != WHITE && BOARD[x][y] != BLACK) {
 				BOARD[x][y] = color;
 				chess[(x + 1) / 2 - 1][(y + 1) / 2 - 1] = player;
-				if (isWin(chess, (x + 1) / 2 - 1, (y + 1) / 2 - 1, player)) {
-
-					Draw();
-					switch (player)
-					{
-					case 1:printf("BLACK Win!\n"); break;
-					case -1:printf("WHITE Win!\n"); break;
-					default:
-						break;
-					}
+				//判断输赢
+				isWin(chess, (x + 1) / 2 - 1, (y + 1) / 2 - 1, &player);
+				if (player == 0) {
 					return 0;
-				};
-				player = (-1 * player);
+				}
 			}
 			break;
 		}
@@ -318,21 +337,15 @@ int AIGame()// human do first step
 	int re = 0;
 	char* color = BLACK;
 	BOARD[x][y] = INIT;
-	for (int i = 0; i < BOARDWIDTH; i++) {
-		for (int j = 0; j < BOARDWIDTH; j++) {
-			REBOARD[i][j] = BOARD[i][j];
-		}
-	}
-	for (int i = 0; i < Width; i++) {
-		for (int j = 0; j < Width; j++) {
-			rechess[i][j] = chess[i][j];
-		}
-	}
+
+	//先储存初始棋盘状态
+	Repentance(&player, &re, 1);
 	Draw();
 	do {
 		color = player == 1 ? BLACK : WHITE;
 		printf("当前位置（%d,%d）\n", (y + 1) / 2, (x + 1) / 2);
 		printf("当前颜色:%s\n", color);
+		/*-------------------------------以下人类------------------------------------------*/
 		if (player == 1) {
 			key = getch();
 			if (BOARD[x][y] != WHITE && BOARD[x][y] != BLACK) BOARD[x][y] = SPACE;
@@ -360,40 +373,24 @@ int AIGame()// human do first step
 			}
 			case 'r': {
 				if (re) {
-					Repentance(&player);
+					Repentance(&player, &re, 2);
 					player *= -1;
-					re = 0;
 				}
 				break;
 			}
 			case ' ': {
-				for (int i = 0; i < BOARDWIDTH; i++) {
-					for (int j = 0; j < BOARDWIDTH; j++) {
-						REBOARD[i][j] = BOARD[i][j];
-					}
-				}
-				for (int i = 0; i < Width; i++) {
-					for (int j = 0; j < Width; j++) {
-						rechess[i][j] = chess[i][j];
-					}
-				}
-				re = 1;
+
+				//落子时先储存当前棋盘状态
+				Repentance(&player, &re, 1);
+
 				if (BOARD[x][y] != WHITE && BOARD[x][y] != BLACK) {
 					BOARD[x][y] = color;
 					chess[(x + 1) / 2 - 1][(y + 1) / 2 - 1] = player;
-					if (isWin(chess, (x + 1) / 2 - 1, (y + 1) / 2 - 1, player)) {
-
-						Draw();
-						switch (player)
-						{
-						case 1:printf("BLACK Win!\n"); break;
-						case -1:printf("WHITE Win!\n"); break;
-						default:
-							break;
-						}
+					//判断输赢
+					isWin(chess, (x + 1) / 2 - 1, (y + 1) / 2 - 1, &player);
+					if (player == 0) {
 						return 0;
-					};
-					player = (-1 * player);
+					}
 				}
 				break;
 			}
@@ -401,27 +398,19 @@ int AIGame()// human do first step
 			default:
 				break;
 			}
-		}
+		}/*-------------------------------以下机器------------------------------------------*/
 		else {
 			/*if (!) {
 				attack();
 			}*/
 			x = (x + 1) / 2 - 1;
 			y = (y + 1) / 2 - 1;
-			result=defend(&x,&y, player);
-			if (isWin(chess, (x + 1) / 2 - 1, (y + 1) / 2 - 1, player)) {
-
-				Draw();
-				switch (player)
-				{
-				case 1:printf("BLACK Win!\n"); break;
-				case -1:printf("WHITE Win!\n"); break;
-				default:
-					break;
-				}
+			result = defend(&x, &y, player);
+			//判断输赢
+			isWin(chess, (x + 1) / 2 - 1, (y + 1) / 2 - 1, &player);
+			if (player == 0) {
 				return 0;
-			};
-			player = -1 * player;
+			}
 		}
 		Draw();
 		for (int t = 0; t < Width; t++) {
@@ -465,7 +454,7 @@ void move(int i, int j, int* x, int* y)//j=1:right,j=-1:left
 	*y = my;
 }
 
-int defend(int *x, int *y, int Player)
+int defend(int* x, int* y, int Player)
 {
 	int i, j, k, px = *x, py = *y;
 	int result = 0;
@@ -492,7 +481,7 @@ int defend(int *x, int *y, int Player)
 		if (result) {
 			chess[px - k + 1][py] = (-1 * Player);
 			BOARD[(px - k + 1) * 2 + 1][py * 2 + 1] = Color;
-			*x = (px - k + 1) * 2 + 1, *y = py * 2 + 1;
+			*x = (px - k + 1) * 2 + 1, * y = py * 2 + 1;
 			break;
 		}
 		else {
@@ -503,7 +492,7 @@ int defend(int *x, int *y, int Player)
 			if (result) {
 				chess[px - k + 2][py] = (-1 * Player);
 				BOARD[(px - k + 2) * 2 + 1][py * 2 + 1] = Color;
-				*x = (px - k + 2) * 2 + 1, *y = py * 2 + 1;
+				*x = (px - k + 2) * 2 + 1, * y = py * 2 + 1;
 				break;
 			}
 		}
@@ -528,7 +517,7 @@ int defend(int *x, int *y, int Player)
 			if (result) {
 				chess[px][py - k + 1] = (-1 * Player);
 				BOARD[px * 2 + 1][(py - k + 1) * 2 + 1] = Color;
-				*x = px * 2 + 1, *y = (py - k + 1) * 2 + 1;
+				*x = px * 2 + 1, * y = (py - k + 1) * 2 + 1;
 				break;
 			}
 			else {
@@ -539,7 +528,7 @@ int defend(int *x, int *y, int Player)
 				if (result) {
 					chess[px][py - k + 2] = (-1 * Player);
 					BOARD[px * 2 + 1][(py - k + 2) * 2 + 1] = Color;
-					*x = px * 2 + 1, *y = (py - k + 2) * 2 + 1;
+					*x = px * 2 + 1, * y = (py - k + 2) * 2 + 1;
 					break;
 				}
 			}
@@ -567,7 +556,7 @@ int defend(int *x, int *y, int Player)
 			if (result) {
 				chess[px - k + 1][py - k + 1] = (-1 * Player);
 				BOARD[(px - k + 1) * 2 + 1][(py - k + 1) * 2 + 1] = Color;
-				*x = (px - k + 1) * 2 + 1, *y = (py - k + 1) * 2 + 1;
+				*x = (px - k + 1) * 2 + 1, * y = (py - k + 1) * 2 + 1;
 				break;
 			}
 			else {
@@ -578,7 +567,7 @@ int defend(int *x, int *y, int Player)
 				if (result) {
 					chess[px - k + 2][py - k + 2] = (-1 * Player);
 					BOARD[(px - k + 2) * 2 + 1][(py - k + 2) * 2 + 1] = Color;
-					*x = (px - k + 2) * 2 + 1, *y = (py - k + 2) * 2 + 1;
+					*x = (px - k + 2) * 2 + 1, * y = (py - k + 2) * 2 + 1;
 					break;
 				}
 			}
@@ -604,7 +593,7 @@ int defend(int *x, int *y, int Player)
 			if (result) {
 				chess[px - k + 1][py + k - 1] = (-1 * Player);
 				BOARD[(px - k + 1) * 2 + 1][(py + k - 1) * 2 + 1] = Color;
-				*x = (px - k + 1) * 2 + 1, *y = (py + k - 1) * 2 + 1;
+				*x = (px - k + 1) * 2 + 1, * y = (py + k - 1) * 2 + 1;
 				break;
 			}
 			else {
@@ -655,7 +644,7 @@ int defend(int *x, int *y, int Player)
 				if (chess[dx[1]][dy[1]] == 0) {
 					chess[dx[1]][dy[1]] = (-1 * Player);
 					BOARD[(dx[1] * 2) + 1][(dy[1] * 2) + 1] = Color;
-					*x = (dx[1] * 2) + 1, *y = (dy[1] * 2) + 1;
+					*x = (dx[1] * 2) + 1, * y = (dy[1] * 2) + 1;
 					result = 1;
 				}
 				break;
@@ -675,7 +664,7 @@ int defend(int *x, int *y, int Player)
 				if (chess[dx[1]][dy[1]] == 0) {
 					chess[dx[1]][dy[1]] = (-1 * Player);
 					BOARD[(dx[1] * 2) + 1][(dy[1] * 2) + 1] = Color;
-					*x = (dx[1] * 2) + 1, *y = (dy[1] * 2) + 1;
+					*x = (dx[1] * 2) + 1, * y = (dy[1] * 2) + 1;
 					result = 1;
 				}
 				break;
@@ -705,10 +694,13 @@ int isForbidden()//判断是否是禁手
 
 void welcome() {
 	int gamemode = 0;
+	int getch();
 	printf("*****五子棋*****\n");
 	printf("1.双人对战\n");
 	printf("2.人机对战\n");
-	scanf_s("%d", &gamemode);
-	if (gamemode == 1) Game();
-	else AIGame();
+	printf("按esc键退出\n");
+	gamemode = getch();
+	if (gamemode == 49) Game();
+	else if (gamemode == 50) AIGame();
+	else if (gamemode == 0x1b) return 0;
 }
