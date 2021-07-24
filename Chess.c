@@ -383,7 +383,7 @@ void move(int i, int j, int* x, int* y)//j=1:right,j=-1:left
 
 int defend(int px, int py, int Player)
 {
-	int i, j = -1, k;
+	int i, j, k;
 	int result = 0;
 	char* Color = Player == 1 ? BLACK : WHITE;
 	Player = -1 * Player;
@@ -533,6 +533,7 @@ int defend(int px, int py, int Player)
 
 	// three or four in a row
 	if (!result) {
+		j = -1;
 		for (i = 0; i < 4; i++) {
 			if (count(chess, px, py, Player, i) == 4) {
 				j = i;
@@ -543,49 +544,51 @@ int defend(int px, int py, int Player)
 				//printf("(%d,%d),3", px, py);
 			}
 		}
-		int dx[2] = { px,px }, dy[2] = { py,py };
-		switch (count(chess, px, py, Player, j))
-		{
-		case 3: {
-			k = -1;
-			while (chess[dx[1]][dy[1]] == Player)
+		if (j != -1) {
+			int dx[2] = { px,px }, dy[2] = { py,py };
+			switch (count(chess, px, py, Player, j))
 			{
-				move(j, k, &dx[1], &dy[1]);
-				if (dx[1] < 0 || dy[1] < 0) {
-					dx[1] = dx[0];
-					dy[1] = dy[0];
-					break;
-				}
+			case 3: {
+				k = -1;
+				while (chess[dx[1]][dy[1]] == Player)
+				{
+					move(j, k, &dx[1], &dy[1]);
+					if (dx[1] < 0 || dy[1] < 0) {
+						dx[1] = dx[0];
+						dy[1] = dy[0];
+						break;
+					}
 
-			}
-			if (chess[dx[1]][dy[1]] == 0) {
-				chess[dx[1]][dy[1]] = (-1 * Player);
-				BOARD[(dx[1] * 2) + 1][(dy[1] * 2) + 1] = Color;
-				result = 1;
-			}
-			break;
-		}
-		case 4: {
-			k = 1;
-			while (chess[dx[1]][dy[1]] == Player)
-			{
-				move(j, k, &dx[1], &dy[1]);
-				if (dx[1] > Width || dy[1] > Width) {
-					dx[1] = dx[0];
-					dy[1] = dy[0];
-					break;
 				}
+				if (chess[dx[1]][dy[1]] == 0) {
+					chess[dx[1]][dy[1]] = (-1 * Player);
+					BOARD[(dx[1] * 2) + 1][(dy[1] * 2) + 1] = Color;
+					result = 1;
+				}
+				break;
+			}
+			case 4: {
+				k = 1;
+				while (chess[dx[1]][dy[1]] == Player)
+				{
+					move(j, k, &dx[1], &dy[1]);
+					if (dx[1] > Width || dy[1] > Width) {
+						dx[1] = dx[0];
+						dy[1] = dy[0];
+						break;
+					}
 
+				}
+				if (chess[dx[1]][dy[1]] == 0) {
+					chess[dx[1]][dy[1]] = (-1 * Player);
+					BOARD[(dx[1] * 2) + 1][(dy[1] * 2) + 1] = Color;
+					result = 1;
+				}
+				break;
 			}
-			if (chess[dx[1]][dy[1]] == 0) {
-				chess[dx[1]][dy[1]] = (-1 * Player);
-				BOARD[(dx[1] * 2) + 1][(dy[1] * 2) + 1] = Color;
-				result = 1;
+			default:
+				break;
 			}
-			break;
-		}
-		default:
-			break;
 		}
 	}
 
