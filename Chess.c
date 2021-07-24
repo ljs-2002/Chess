@@ -2,19 +2,20 @@
 
 #define Width 15          //standard size of the board
 #define WinAmount 5       //chess amount to win
-#define BOARDWITH 2*Width+1 //9 board contain 1 chess
+#define BOARDWIDTH 2*Width+1 //9 board contain 1 chess
 
 //the chess
 const char* WHITE = "○", * BLACK = "●"; *INIT = "¤";
 int chess[Width][Width] = { 0 };
+int rechess[Width][Width] = { 0 };
 
 //the board
 const char* LT = "┌", * TOP = "┬", * RT = "┐";
 const char* LEFT = "├", * CENTER = "┼", * RIGHT = "┤";
 const char* LB = "└", * BOTTON = "┴", * RB = "┘";
 const char* SPACE = " ";
-char* BOARD[BOARDWITH][BOARDWITH];
-
+char* BOARD[BOARDWIDTH][BOARDWIDTH];
+char* REBOARD[BOARDWIDTH][BOARDWIDTH];
 
 void InitBoard();//initialize the board
 
@@ -50,21 +51,21 @@ void InitBoard()
 {
 	int i, j;
 	BOARD[0][0] = LT;
-	BOARD[0][BOARDWITH - 1] = RT;
-	BOARD[BOARDWITH - 1][0] = LB;
-	BOARD[BOARDWITH - 1][BOARDWITH - 1] = RB;
-	for (i = 0; i < BOARDWITH; i++) {			//TODO:simplify this
-		for (j = 0; j < BOARDWITH; j++) {
-			if (((i == 0) || (i == BOARDWITH - 1)) && ((j == 0) || (j == BOARDWITH - 1))) {
+	BOARD[0][BOARDWIDTH - 1] = RT;
+	BOARD[BOARDWIDTH - 1][0] = LB;
+	BOARD[BOARDWIDTH - 1][BOARDWIDTH - 1] = RB;
+	for (i = 0; i < BOARDWIDTH; i++) {			//TODO:simplify this
+		for (j = 0; j < BOARDWIDTH; j++) {
+			if (((i == 0) || (i == BOARDWIDTH - 1)) && ((j == 0) || (j == BOARDWIDTH - 1))) {
 				continue;
 			}
 			else {
 				switch (i)
 				{
 				case 0:BOARD[i][j] = TOP; break;
-				case BOARDWITH - 1:BOARD[i][j] = BOTTON; break;
+				case BOARDWIDTH - 1:BOARD[i][j] = BOTTON; break;
 				default: {
-					if (j == 0 || j == BOARDWITH - 1) {
+					if (j == 0 || j == BOARDWIDTH - 1) {
 						if (j == 0) {
 							BOARD[i][j] = LEFT;
 						}
@@ -93,8 +94,8 @@ void Draw()
 {
 	system("cls");
 	int i, j;
-	for (i = 0; i < BOARDWITH; i++) {
-		for (j = 0; j < BOARDWITH; j++) {
+	for (i = 0; i < BOARDWIDTH; i++) {
+		for (j = 0; j < BOARDWIDTH; j++) {
 			if (BOARD[i][j] == WHITE || BOARD[i][j] == BLACK || BOARD[i][j] == INIT) {
 				printf("%s", BOARD[i][j]);
 			}
@@ -196,25 +197,53 @@ int isWin(int Chess[Width][Width], int cx, int cy, int Player)
 	return Result;
 }
 
+int Repentance(int* player)//悔棋
+{
+	int player_now = *player;
+	for (int i = 0; i < BOARDWIDTH; i++) {
+		for (int j = 0; j < BOARDWIDTH; j++) {
+			BOARD[i][j] = REBOARD[i][j];
+		}
+	}
+	for (int i = 0; i < Width; i++) {
+		for (int j = 0; j < Width; j++) {
+			chess[i][j] = rechess[i][j];
+		}
+	}
+	*player = (-1) * player_now;
+}
+
 int Game() {
 	int key;
 	int getch();
 	int x = 1, y = 1;
 	int player = 1;   //1 is black,-1 is white
 	int result = 0;
+	int re = 0;
 	char* color = BLACK;
 	BOARD[x][y] = INIT;
+	for (int i = 0; i < BOARDWIDTH; i++) {
+		for (int j = 0; j < BOARDWIDTH; j++) {
+			REBOARD[i][j] = BOARD[i][j];
+		}
+	}
+	for (int i = 0; i < Width; i++) {
+		for (int j = 0; j < Width; j++) {
+			rechess[i][j] = chess[i][j];
+		}
+	}
 	Draw();
 	do {
 		color = player == 1 ? BLACK : WHITE;
 		printf("当前位置（%d,%d）\n", (y + 1) / 2, (x + 1) / 2);
 		printf("当前颜色:%s\n", color);
+
 		key = getch();
 		if (BOARD[x][y] != WHITE && BOARD[x][y] != BLACK) BOARD[x][y] = SPACE;
 		switch (key)
 		{
 		case 's': {
-			if (x < BOARDWITH - 2) x += 2;
+			if (x < BOARDWIDTH - 2) x += 2;
 			if (BOARD[x][y] != WHITE && BOARD[x][y] != BLACK) BOARD[x][y] = INIT;
 			break;
 		}
@@ -224,7 +253,7 @@ int Game() {
 			break;
 		}
 		case 'd': {
-			if (y < BOARDWITH - 2) y += 2;
+			if (y < BOARDWIDTH - 2) y += 2;
 			if (BOARD[x][y] != WHITE && BOARD[x][y] != BLACK) BOARD[x][y] = INIT;
 			break;
 		}
@@ -233,7 +262,25 @@ int Game() {
 			if (BOARD[x][y] != WHITE && BOARD[x][y] != BLACK) BOARD[x][y] = INIT;
 			break;
 		}
+		case 'r': {
+			if (re) {
+				Repentance(&player);
+				re *= 0;
+			}
+			break;
+		}
 		case ' ': {
+			for (int i = 0; i < BOARDWIDTH; i++) {
+				for (int j = 0; j < BOARDWIDTH; j++) {
+					REBOARD[i][j] = BOARD[i][j];
+				}
+			}
+			for (int i = 0; i < Width; i++) {
+				for (int j = 0; j < Width; j++) {
+					rechess[i][j] = chess[i][j];
+				}
+			}
+			re = 1;
 			if (BOARD[x][y] != WHITE && BOARD[x][y] != BLACK) {
 				BOARD[x][y] = color;
 				chess[(x + 1) / 2 - 1][(y + 1) / 2 - 1] = player;
@@ -261,11 +308,6 @@ int Game() {
 	} while (key != 0x1b);
 }
 
-int Repentance()//悔棋
-{
-
-}
-
 int AIGame()// human do first step
 {
 	int key;
@@ -273,8 +315,19 @@ int AIGame()// human do first step
 	int x = 1, y = 1;
 	int player = 1;   //1 is black,-1 is white
 	int result = 0;
+	int re = 0;
 	char* color = BLACK;
 	BOARD[x][y] = INIT;
+	for (int i = 0; i < BOARDWIDTH; i++) {
+		for (int j = 0; j < BOARDWIDTH; j++) {
+			REBOARD[i][j] = BOARD[i][j];
+		}
+	}
+	for (int i = 0; i < Width; i++) {
+		for (int j = 0; j < Width; j++) {
+			rechess[i][j] = chess[i][j];
+		}
+	}
 	Draw();
 	do {
 		color = player == 1 ? BLACK : WHITE;
@@ -286,7 +339,7 @@ int AIGame()// human do first step
 			switch (key)
 			{
 			case 's': {
-				if (x < BOARDWITH - 2) x += 2;
+				if (x < BOARDWIDTH - 2) x += 2;
 				if (BOARD[x][y] != WHITE && BOARD[x][y] != BLACK) BOARD[x][y] = INIT;
 				break;
 			}
@@ -296,7 +349,7 @@ int AIGame()// human do first step
 				break;
 			}
 			case 'd': {
-				if (y < BOARDWITH - 2) y += 2;
+				if (y < BOARDWIDTH - 2) y += 2;
 				if (BOARD[x][y] != WHITE && BOARD[x][y] != BLACK) BOARD[x][y] = INIT;
 				break;
 			}
@@ -305,7 +358,26 @@ int AIGame()// human do first step
 				if (BOARD[x][y] != WHITE && BOARD[x][y] != BLACK) BOARD[x][y] = INIT;
 				break;
 			}
+			case 'r': {
+				if (re) {
+					Repentance(&player);
+					player *= -1;
+					re = 0;
+				}
+				break;
+			}
 			case ' ': {
+				for (int i = 0; i < BOARDWIDTH; i++) {
+					for (int j = 0; j < BOARDWIDTH; j++) {
+						REBOARD[i][j] = BOARD[i][j];
+					}
+				}
+				for (int i = 0; i < Width; i++) {
+					for (int j = 0; j < Width; j++) {
+						rechess[i][j] = chess[i][j];
+					}
+				}
+				re = 1;
 				if (BOARD[x][y] != WHITE && BOARD[x][y] != BLACK) {
 					BOARD[x][y] = color;
 					chess[(x + 1) / 2 - 1][(y + 1) / 2 - 1] = player;
@@ -337,10 +409,6 @@ int AIGame()// human do first step
 			x = (x + 1) / 2 - 1;
 			y = (y + 1) / 2 - 1;
 			result=defend(&x,&y, player);
-			if (!result) {
-				x = 2 * (x + 1) - 1;
-				y = 2 * (y + 1) - 1;
-			}
 			if (isWin(chess, (x + 1) / 2 - 1, (y + 1) / 2 - 1, player)) {
 
 				Draw();
@@ -435,7 +503,7 @@ int defend(int *x, int *y, int Player)
 			if (result) {
 				chess[px - k + 2][py] = (-1 * Player);
 				BOARD[(px - k + 2) * 2 + 1][py * 2 + 1] = Color;
-				*x = (px - k + 2) * 2 + 2, *y = py * 2 + 1;
+				*x = (px - k + 2) * 2 + 1, *y = py * 2 + 1;
 				break;
 			}
 		}
@@ -616,6 +684,10 @@ int defend(int *x, int *y, int Player)
 				break;
 			}
 		}
+	}
+	if (!result) {
+		*x = 2 * (px + 1) - 1;
+		*y = 2 * (py + 1) - 1;
 	}
 
 	return result;
