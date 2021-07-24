@@ -331,12 +331,28 @@ int AIGame()// human do first step
 			}
 		}
 		else {
-
 			/*if (!) {
 				attack();
 			}*/
-			defend((x + 1) / 2 - 1, (y + 1) / 2 - 1, player);
+			x = (x + 1) / 2 - 1;
+			y = (y + 1) / 2 - 1;
+			result=defend(&x,&y, player);
+			if (!result) {
+				x = 2 * (x + 1) - 1;
+				y = 2 * (y + 1) - 1;
+			}
+			if (isWin(chess, (x + 1) / 2 - 1, (y + 1) / 2 - 1, player)) {
 
+				Draw();
+				switch (player)
+				{
+				case 1:printf("BLACK Win!\n"); break;
+				case -1:printf("WHITE Win!\n"); break;
+				default:
+					break;
+				}
+				return 0;
+			};
 			player = -1 * player;
 		}
 		Draw();
@@ -381,9 +397,9 @@ void move(int i, int j, int* x, int* y)//j=1:right,j=-1:left
 	*y = my;
 }
 
-int defend(int px, int py, int Player)
+int defend(int *x, int *y, int Player)
 {
-	int i, j, k;
+	int i, j, k, px = *x, py = *y;
 	int result = 0;
 	char* Color = Player == 1 ? BLACK : WHITE;
 	Player = -1 * Player;
@@ -408,6 +424,7 @@ int defend(int px, int py, int Player)
 		if (result) {
 			chess[px - k + 1][py] = (-1 * Player);
 			BOARD[(px - k + 1) * 2 + 1][py * 2 + 1] = Color;
+			*x = (px - k + 1) * 2 + 1, *y = py * 2 + 1;
 			break;
 		}
 		else {
@@ -418,6 +435,7 @@ int defend(int px, int py, int Player)
 			if (result) {
 				chess[px - k + 2][py] = (-1 * Player);
 				BOARD[(px - k + 2) * 2 + 1][py * 2 + 1] = Color;
+				*x = (px - k + 2) * 2 + 2, *y = py * 2 + 1;
 				break;
 			}
 		}
@@ -442,6 +460,7 @@ int defend(int px, int py, int Player)
 			if (result) {
 				chess[px][py - k + 1] = (-1 * Player);
 				BOARD[px * 2 + 1][(py - k + 1) * 2 + 1] = Color;
+				*x = px * 2 + 1, *y = (py - k + 1) * 2 + 1;
 				break;
 			}
 			else {
@@ -452,6 +471,7 @@ int defend(int px, int py, int Player)
 				if (result) {
 					chess[px][py - k + 2] = (-1 * Player);
 					BOARD[px * 2 + 1][(py - k + 2) * 2 + 1] = Color;
+					*x = px * 2 + 1, *y = (py - k + 2) * 2 + 1;
 					break;
 				}
 			}
@@ -479,6 +499,7 @@ int defend(int px, int py, int Player)
 			if (result) {
 				chess[px - k + 1][py - k + 1] = (-1 * Player);
 				BOARD[(px - k + 1) * 2 + 1][(py - k + 1) * 2 + 1] = Color;
+				*x = (px - k + 1) * 2 + 1, *y = (py - k + 1) * 2 + 1;
 				break;
 			}
 			else {
@@ -489,6 +510,7 @@ int defend(int px, int py, int Player)
 				if (result) {
 					chess[px - k + 2][py - k + 2] = (-1 * Player);
 					BOARD[(px - k + 2) * 2 + 1][(py - k + 2) * 2 + 1] = Color;
+					*x = (px - k + 2) * 2 + 1, *y = (py - k + 2) * 2 + 1;
 					break;
 				}
 			}
@@ -514,6 +536,7 @@ int defend(int px, int py, int Player)
 			if (result) {
 				chess[px - k + 1][py + k - 1] = (-1 * Player);
 				BOARD[(px - k + 1) * 2 + 1][(py + k - 1) * 2 + 1] = Color;
+				*x = (px - k + 1) * 2 + 1, *y = (py + k - 1) * 2 + 1;
 				break;
 			}
 			else {
@@ -524,6 +547,7 @@ int defend(int px, int py, int Player)
 				if (result) {
 					chess[px - k + 2][py + k - 2] = (-1 * Player);
 					BOARD[(px - k + 2) * 2 + 1][(py + k - 2) * 2 + 1] = Color;
+					*x = (px - k + 2) * 2 + 1, * y = (py + k - 2) * 2 + 1;
 					break;
 				}
 			}
@@ -563,6 +587,7 @@ int defend(int px, int py, int Player)
 				if (chess[dx[1]][dy[1]] == 0) {
 					chess[dx[1]][dy[1]] = (-1 * Player);
 					BOARD[(dx[1] * 2) + 1][(dy[1] * 2) + 1] = Color;
+					*x = (dx[1] * 2) + 1, *y = (dy[1] * 2) + 1;
 					result = 1;
 				}
 				break;
@@ -582,6 +607,7 @@ int defend(int px, int py, int Player)
 				if (chess[dx[1]][dy[1]] == 0) {
 					chess[dx[1]][dy[1]] = (-1 * Player);
 					BOARD[(dx[1] * 2) + 1][(dy[1] * 2) + 1] = Color;
+					*x = (dx[1] * 2) + 1, *y = (dy[1] * 2) + 1;
 					result = 1;
 				}
 				break;
